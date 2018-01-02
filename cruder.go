@@ -34,3 +34,4 @@ func (CRUDer *CRUDer) Read(c *gin.Context) {
 	CRUDer.db.Find(res, id)
 	c.JSON(200, res)
 }
+
