@@ -24,14 +24,16 @@ func InitCRUDer(db *gorm.DB, model CRUDerModelInterface) *CRUDer {
 	return cruder
 }
 
+//todo:: normal queries like page_index,.. get a prefix like `_` ke beshe filter ha ro fieldName=value kar kard, hata fieldName>=value baye parser middleware!  regex :)
+
 func (CRUDer *CRUDer) List(context *gin.Context) {
 	var (
 		res                                       = CRUDer.m.NewSlice()
 		pageIndex, pageSize                       int
-		pageIndexStr, hasPageIndex                = context.GetQuery("page_index")
-		pageSizeStr, hasPageSize                  = context.GetQuery("page_size")
-		pageOrderField, hasPageOrderField         = context.GetQuery("page_order_field")
-		pageOrderDirection, hasPageOrderDirection = context.GetQuery("page_order_direction")
+		pageIndexStr, hasPageIndex                = context.GetQuery("_page_index")
+		pageSizeStr, hasPageSize                  = context.GetQuery("_page_size")
+		pageOrderField, hasPageOrderField         = context.GetQuery("_page_order_field")
+		pageOrderDirection, hasPageOrderDirection = context.GetQuery("_page_order_direction")
 	)
 
 	if !hasPageIndex {
@@ -55,13 +57,32 @@ func (CRUDer *CRUDer) List(context *gin.Context) {
 	context.JSON(200, res)
 }
 
+func (CRUDer *CRUDer) Create(context *gin.Context) {
+	var res = CRUDer.m.NewOne()
+	/*var err = */context.ShouldBindJSON(res)
+	/*if err != nil {
+		context.Status(400)
+		panic(err)
+	}*/
+	var rId = reflect.Indirect(reflect.ValueOf(res)).FieldByName("ID")
+	rId.Set(reflect.Zero(rId.Type()))
+	if err := CRUDer.db.Create(res).Error; err != nil {
+		context.JSON(400, err)
+	} else {
+		context.JSON(201, res)
+	}
+}
+
 func (CRUDer *CRUDer) Read(context *gin.Context) {
 	var (
 		id  = context.Param("rid")
 		res = CRUDer.m.NewOne()
 	)
-	CRUDer.db.Find(res, id)
-	context.JSON(200, res)
+	if CRUDer.db.Find(res, id).RecordNotFound() {
+		context.Status(404)
+	} else {
+		context.JSON(200, res)
+	}
 }
 
 func (CRUDer *CRUDer) Update(context *gin.Context) {
@@ -71,8 +92,36 @@ func (CRUDer *CRUDer) Update(context *gin.Context) {
 		intId, _ = strconv.Atoi(id)
 	)
 	var query = CRUDer.db.Find(res, id)
-	context.BindJSON(res)
-	reflect.Indirect(reflect.ValueOf(res)).FieldByName("ID").SetInt(int64(intId))
-	query.Update(res)
-	context.JSON(200, res)
+	/*var err = */context.ShouldBindJSON(res)
+	//if err != nil {
+	//	context.Status(400)
+	//	panic(err)
+	//}
+	var i = int64(intId)
+	reflect.Indirect(reflect.ValueOf(res)).FieldByName("ID").Set(reflect.ValueOf(&i))
+	//reflect.Indirect(reflect.ValueOf(res)).FieldByName("ID").SetInt(int64(intId))
+	if err := query.Update(res).Error; err != nil {
+		context.JSON(400, err)
+	} else {
+		context.JSON(200, res)
+	}
+}
+
+func (CRUDer *CRUDer) Delete(context *gin.Context) {
+	var (
+		id  = context.Param("rid")
+		res = CRUDer.m.NewOne()
+	)
+	CRUDer.db.Delete(res, id)
+	context.Status(200)
+}
+/*
+limit
+offset
+order: map[string]string (field:direction)
+criteria: map[string]string (field:operator:value)
+ */
+func CRUDerMiddleware(context *gin.Context) {
+	context.Request.URL.Query()
+
 }
