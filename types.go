@@ -1,5 +1,21 @@
 package gorm2gin
 
+import (
+	"github.com/jinzhu/gorm"
+	"fmt"
+	"strings"
+)
+
+type CRUDerModelInterface interface {
+	NewOne() interface{}
+	NewSlice() interface{}
+}
+
+type CRUDer struct {
+	m  CRUDerModelInterface
+	db *gorm.DB
+}
+
 type Pagination struct {
 	Limit, Offset int
 }
@@ -12,7 +28,24 @@ type Criterion struct {
 	Operator WhereOperator
 }
 
-type Criteria []Criterion
+func (Criterion *Criterion) Query() (string, interface{}) {
+	return fmt.Sprintf("%s %s ?", Criterion.Field, Criterion.Operator), Criterion.Value
+}
+
+type Criteria []*Criterion
+
+func (Criteria Criteria) Query() (string, []interface{}) {
+	var (
+		queries []string
+		values  []interface{}
+	)
+	for _, c := range Criteria {
+		var query, value = c.Query()
+		queries = append(queries, query)
+		values = append(values, value)
+	}
+	return strings.Join(queries," AND ") , values
+}
 
 type WhereOperator string
 
@@ -22,7 +55,8 @@ const (
 	WhereOpGTEqual  WhereOperator = ">="
 	WhereOpLT       WhereOperator = "<"
 	WhereOpLTEqual  WhereOperator = "<="
-	WhereOpNotEqual WhereOperator = "<>"
-	//WhereOpLike     WhereOperator = "like"
+	WhereOpNotEqual WhereOperator = "!="
+	//WhereIn         WhereOperator = "in"
+	WhereOpLike     WhereOperator = "like"
 	//WhereOpBetween  WhereOperator = "between"
 )

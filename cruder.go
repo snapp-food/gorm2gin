@@ -5,17 +5,8 @@ import (
 	"github.com/jinzhu/gorm"
 	"strconv"
 	"reflect"
+	"fmt"
 )
-
-type CRUDerModelInterface interface {
-	NewOne() interface{}
-	NewSlice() interface{}
-}
-
-type CRUDer struct {
-	m  CRUDerModelInterface
-	db *gorm.DB
-}
 
 func InitCRUDer(db *gorm.DB, model CRUDerModelInterface) *CRUDer {
 	var cruder = new(CRUDer)
@@ -25,9 +16,15 @@ func InitCRUDer(db *gorm.DB, model CRUDerModelInterface) *CRUDer {
 }
 
 //todo:: normal queries like page_index,.. get a prefix like `_` ke beshe filter ha ro fieldName=value kar kard, hata fieldName>=value baye parser middleware!  regex :)
-
+/*
+limit
+offset
+order: map[string]string (field:direction)
+criteria: map[string]string (field:operator:value)
+ */
 func (CRUDer *CRUDer) List(context *gin.Context) {
 	var (
+		criteria                                  = Criteria{}
 		res                                       = CRUDer.m.NewSlice()
 		pageIndex, pageSize                       int
 		pageIndexStr, hasPageIndex                = context.GetQuery("_page_index")
@@ -35,6 +32,26 @@ func (CRUDer *CRUDer) List(context *gin.Context) {
 		pageOrderField, hasPageOrderField         = context.GetQuery("_page_order_field")
 		pageOrderDirection, hasPageOrderDirection = context.GetQuery("_page_order_direction")
 	)
+
+	var qStr = context.Request.URL.Query()
+	for key, value := range qStr {
+		if key[0] == '_' {
+			continue
+		}
+		for _, v := range value {
+			criteria = append(criteria, &Criterion{
+				Field:    key,
+				Value:    v,
+				Operator: WhereOpEqual,
+			})
+		}
+	}
+	var queries, values = criteria.Query()
+
+	//for _,cr := range criteria {
+	//	fmt.Println(cr.Query())
+	//}
+	//fmt.Println(criteria.Query())
 
 	if !hasPageIndex {
 		pageIndex = 1
@@ -52,14 +69,22 @@ func (CRUDer *CRUDer) List(context *gin.Context) {
 	if !hasPageOrderDirection {
 		pageOrderDirection = "asc"
 	}
-	CRUDer.db.Offset(pageIndex - 1*pageSize).Limit(pageSize).Order(pageOrderField + " " + pageOrderDirection).Find(res)
+
+	CRUDer.db.
+		Offset(pageIndex - 1*pageSize).
+		Limit(pageSize).
+		Order(pageOrderField + " " + pageOrderDirection).
+		Where(queries, values...).
+		Find(res)
+
+	//todo pagination result - map[] res: [] , pg: []
 
 	context.JSON(200, res)
 }
 
 func (CRUDer *CRUDer) Create(context *gin.Context) {
 	var res = CRUDer.m.NewOne()
-	/*var err = */context.ShouldBindJSON(res)
+	/*var err = */ context.ShouldBindJSON(res)
 	/*if err != nil {
 		context.Status(400)
 		panic(err)
@@ -92,7 +117,7 @@ func (CRUDer *CRUDer) Update(context *gin.Context) {
 		intId, _ = strconv.Atoi(id)
 	)
 	var query = CRUDer.db.Find(res, id)
-	/*var err = */context.ShouldBindJSON(res)
+	/*var err = */ context.ShouldBindJSON(res)
 	//if err != nil {
 	//	context.Status(400)
 	//	panic(err)
@@ -115,13 +140,8 @@ func (CRUDer *CRUDer) Delete(context *gin.Context) {
 	CRUDer.db.Delete(res, id)
 	context.Status(200)
 }
-/*
-limit
-offset
-order: map[string]string (field:direction)
-criteria: map[string]string (field:operator:value)
- */
+
 func CRUDerMiddleware(context *gin.Context) {
-	context.Request.URL.Query()
+	//context.Request.URL.Query()
 
 }
