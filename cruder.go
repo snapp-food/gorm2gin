@@ -5,7 +5,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"strconv"
 	"reflect"
-	"fmt"
 )
 
 func InitCRUDer(db *gorm.DB, model CRUDerModelInterface) *CRUDer {
@@ -24,6 +23,7 @@ criteria: map[string]string (field:operator:value)
  */
 func (CRUDer *CRUDer) List(context *gin.Context) {
 	var (
+		count                                     int64
 		criteria                                  = Criteria{}
 		res                                       = CRUDer.m.NewSlice()
 		pageIndex, pageSize                       int
@@ -71,15 +71,23 @@ func (CRUDer *CRUDer) List(context *gin.Context) {
 	}
 
 	CRUDer.db.
-		Offset(pageIndex - 1*pageSize).
+		Where(queries, values...).
+		Model(res).Count(&count)
+	CRUDer.db.
+		Offset((pageIndex - 1) * pageSize).
 		Limit(pageSize).
 		Order(pageOrderField + " " + pageOrderDirection).
 		Where(queries, values...).
 		Find(res)
 
-	//todo pagination result - map[] res: [] , pg: []
-
-	context.JSON(200, res)
+	context.JSON(200, map[string]interface{}{
+		"results": res,
+		"pagination": map[string]interface{}{
+			"total":      count,
+			"page_index": pageIndex,
+			"page_size":  pageSize,
+		},
+	})
 }
 
 func (CRUDer *CRUDer) Create(context *gin.Context) {
