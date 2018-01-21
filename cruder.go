@@ -15,7 +15,7 @@ import (
 // todo INJURIIIIIIIIIIII: ye service e singleton darim ke handler e transactionas:
 // vaghti ye tr e jadid miad ba hamin uid:::  tx := db.Begin() ro zakhire mikone!! va bad ru un query mizane dige!
 // akharesham ru hamun tx.commit ya tx.rollback HOOOOOOOOOOOOOORAAAAy
-// har kodumam ye expire e moshakhas dare ke age vaziatesh moshakhas nashod khodesh rollback ya commit kone!
+// har kodumam ye expire e moshakhas dare ke age vaziatesh moshakhas nashod khodesh rollback ya commit kone! ya bebinam mysql che mikone!
 
 func InitCRUDer(db *gorm.DB, model CRUDerModelInterface) *CRUDer {
 	var cruder = new(CRUDer)
@@ -27,14 +27,14 @@ func InitCRUDer(db *gorm.DB, model CRUDerModelInterface) *CRUDer {
 func (CRUDer *CRUDer) List(context *gin.Context) {
 	var (
 		count                                     int64
+		pageOrder                                 []string
 		criteria                                  = Criteria{}
 		res                                       = CRUDer.m.NewSlice()
 		qStr                                      = context.Request.URL.Query()
-		offsetStr, _                              = context.GetQuery("_offset")
 		limitStr, _                               = context.GetQuery("_limit")
+		offsetStr, _                              = context.GetQuery("_offset")
 		pageOrderField, _                         = context.GetQuery("_page_order_field")
 		pageOrderDirection, hasPageOrderDirection = context.GetQuery("_page_order_direction")
-		pageOrder                                 []string
 	)
 
 	for key, value := range qStr {
@@ -86,11 +86,7 @@ func (CRUDer *CRUDer) List(context *gin.Context) {
 
 func (CRUDer *CRUDer) Create(context *gin.Context) {
 	var res = CRUDer.m.NewOne()
-	/*var err = */ context.ShouldBindJSON(res)
-	/*if err != nil {
-		context.Status(400)
-		panic(err)
-	}*/
+	context.ShouldBindJSON(res)
 	var rId = reflect.Indirect(reflect.ValueOf(res)).FieldByName("ID")
 	rId.Set(reflect.Zero(rId.Type()))
 	if err := CRUDer.db.Create(res).Error; err != nil {
@@ -119,14 +115,9 @@ func (CRUDer *CRUDer) Update(context *gin.Context) {
 		intId, _ = strconv.Atoi(id)
 	)
 	var query = CRUDer.db.Find(res, id)
-	/*var err = */ context.ShouldBindJSON(res)
-	//if err != nil {
-	//	context.Status(400)
-	//	panic(err)
-	//}
+	context.ShouldBindJSON(res)
 	var i = int64(intId)
 	reflect.Indirect(reflect.ValueOf(res)).FieldByName("ID").Set(reflect.ValueOf(&i))
-	//reflect.Indirect(reflect.ValueOf(res)).FieldByName("ID").SetInt(int64(intId))
 	if err := query.Update(res).Error; err != nil {
 		context.JSON(400, err)
 	} else {
@@ -145,5 +136,5 @@ func (CRUDer *CRUDer) Delete(context *gin.Context) {
 
 func CRUDerMiddleware(context *gin.Context) {
 	//context.Request.URL.Query()
-
+	//if has transaction flag...
 }
