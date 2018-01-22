@@ -8,12 +8,16 @@ import (
 	"strings"
 )
 
+//fixme: handle connection is closed errors
+
+//todo:: sync and async mod! (bekhosus tu tr mod)
+
 //todo: transactional requests: ye flag e transactionMode migire ba ye UniqueID (rand) ke baraye majmueye trans estefade mikone
 // va akhare kar Commit ya Rollback call mishe!
 // mitune Sync va ASync bashe juri ke poshte har request query bezane ya ASync query bezane va faghat tu commit result ro bege!
 // sare Commit mibine age hameye query ha anjam shode ke result o mide magarna sabr mikone hamashun anjam beshan bad result mide!
 // todo INJURIIIIIIIIIIII: ye service e singleton darim ke handler e transactionas:
-// vaghti ye tr e jadid miad ba hamin uid:::  tx := db.Begin() ro zakhire mikone!! va bad ru un query mizane dige!
+// vaghti ye tr e jadid miad ba hamin uid:::  tx := DB.Begin() ro zakhire mikone!! va bad ru un query mizane dige!
 // akharesham ru hamun tx.commit ya tx.rollback HOOOOOOOOOOOOOORAAAAy
 // har kodumam ye expire e moshakhas dare ke age vaziatesh moshakhas nashod khodesh rollback ya commit kone! ya bebinam mysql che mikone!
 
@@ -22,6 +26,18 @@ func InitCRUDer(db *gorm.DB, model CRUDerModelInterface) *CRUDer {
 	cruder.m = model
 	cruder.db = db
 	return cruder
+}
+
+func (CRUDer *CRUDer) GetDB(context *gin.Context) *gorm.DB {
+	if trUid, trMode := context.GetQuery("_tr_uid"); trMode {
+		var id, err = strconv.ParseUint(trUid, 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		return CRUDer.GetOrNewTransaction(id).DB
+	} else {
+		return CRUDer.db
+	}
 }
 
 func (CRUDer *CRUDer) List(context *gin.Context) {
@@ -64,10 +80,10 @@ func (CRUDer *CRUDer) List(context *gin.Context) {
 		}
 	}
 
-	CRUDer.db.
+	CRUDer.GetDB(context).
 		Where(queries, values...).
 		Model(res).Count(&count)
-	CRUDer.db.
+	CRUDer.GetDB(context).
 		Offset(offsetStr).
 		Limit(limitStr).
 		Order(strings.Join(pageOrder, ",")).
@@ -89,7 +105,7 @@ func (CRUDer *CRUDer) Create(context *gin.Context) {
 	context.ShouldBindJSON(res)
 	var rId = reflect.Indirect(reflect.ValueOf(res)).FieldByName("ID")
 	rId.Set(reflect.Zero(rId.Type()))
-	if err := CRUDer.db.Create(res).Error; err != nil {
+	if err := CRUDer.GetDB(context).Create(res).Error; err != nil {
 		context.JSON(400, err)
 	} else {
 		context.JSON(201, res)
@@ -101,7 +117,7 @@ func (CRUDer *CRUDer) Read(context *gin.Context) {
 		id  = context.Param("rid")
 		res = CRUDer.m.NewOne()
 	)
-	if CRUDer.db.Find(res, id).RecordNotFound() {
+	if CRUDer.GetDB(context).Find(res, id).RecordNotFound() {
 		context.Status(404)
 	} else {
 		context.JSON(200, res)
@@ -114,7 +130,7 @@ func (CRUDer *CRUDer) Update(context *gin.Context) {
 		id       = context.Param("rid")
 		intId, _ = strconv.Atoi(id)
 	)
-	var query = CRUDer.db.Find(res, id)
+	var query = CRUDer.GetDB(context).Find(res, id)
 	context.ShouldBindJSON(res)
 	var i = int64(intId)
 	reflect.Indirect(reflect.ValueOf(res)).FieldByName("ID").Set(reflect.ValueOf(&i))
@@ -130,11 +146,11 @@ func (CRUDer *CRUDer) Delete(context *gin.Context) {
 		id  = context.Param("rid")
 		res = CRUDer.m.NewOne()
 	)
-	CRUDer.db.Delete(res, id)
+	CRUDer.GetDB(context).Delete(res, id)
 	context.Status(200)
 }
 
 func CRUDerMiddleware(context *gin.Context) {
 	//context.Request.URL.Query()
-	//if has transaction flag...
+
 }
