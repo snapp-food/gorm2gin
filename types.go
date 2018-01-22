@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+const queryParamTransactionUid = "_tr_uid"
+const queryParamLimit = "_limit"
+const queryParamOffset = "_offset"
+const queryParamPageOrderField = "_page_order_field"
+const queryParamPageOrderDirection = "_page_order_direction"
+
 type CRUDerModelInterface interface {
 	NewOne() interface{}
 	NewSlice() interface{}

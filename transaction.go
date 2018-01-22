@@ -39,7 +39,7 @@ func (CRUDer *CRUDer) DestroyDeadTr(c <-chan time.Time, id uint64) {
 }
 
 func (CRUDer *CRUDer) CommitTransaction(context *gin.Context) {
-	var trUid, _ = context.GetQuery("_tr_uid")
+	var trUid, _ = context.GetQuery(queryParamTransactionUid)
 	var id, err = strconv.ParseUint(trUid, 10, 64)
 	if tr, ok := Transactions[id]; err != nil || !ok {
 		context.Status(400)
@@ -52,7 +52,7 @@ func (CRUDer *CRUDer) CommitTransaction(context *gin.Context) {
 	}
 }
 func (CRUDer *CRUDer) RollbackTransaction(context *gin.Context) {
-	var trUid, _ = context.GetQuery("_tr_uid")
+	var trUid, _ = context.GetQuery(queryParamTransactionUid)
 	var id, err = strconv.ParseUint(trUid, 10, 64)
 	if tr, ok := Transactions[id]; err != nil || !ok {
 		context.Status(400)

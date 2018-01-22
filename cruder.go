@@ -29,7 +29,7 @@ func InitCRUDer(db *gorm.DB, model CRUDerModelInterface) *CRUDer {
 }
 
 func (CRUDer *CRUDer) GetDB(context *gin.Context) *gorm.DB {
-	if trUid, trMode := context.GetQuery("_tr_uid"); trMode {
+	if trUid, trMode := context.GetQuery(queryParamTransactionUid); trMode {
 		var id, err = strconv.ParseUint(trUid, 10, 64)
 		if err != nil {
 			panic(err)
@@ -47,10 +47,10 @@ func (CRUDer *CRUDer) List(context *gin.Context) {
 		criteria                                  = Criteria{}
 		res                                       = CRUDer.m.NewSlice()
 		qStr                                      = context.Request.URL.Query()
-		limitStr, _                               = context.GetQuery("_limit")
-		offsetStr, _                              = context.GetQuery("_offset")
-		pageOrderField, _                         = context.GetQuery("_page_order_field")
-		pageOrderDirection, hasPageOrderDirection = context.GetQuery("_page_order_direction")
+		limitStr, _                               = context.GetQuery(queryParamLimit)
+		offsetStr, _                              = context.GetQuery(queryParamOffset)
+		pageOrderField, _                         = context.GetQuery(queryParamPageOrderField)
+		pageOrderDirection, hasPageOrderDirection = context.GetQuery(queryParamPageOrderDirection)
 	)
 
 	for key, value := range qStr {
