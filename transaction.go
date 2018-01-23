@@ -24,7 +24,7 @@ func (CRUDer *CRUDer) GetOrNewTransaction(id uint64) *Transaction {
 	} else { // Begin:
 		Transactions[id] = new(Transaction)
 		Transactions[id].DB = CRUDer.db.Begin()
-		go CRUDer.DestroyDeadTr(time.Tick(TrLifeTime), id)
+		go CRUDer.DestroyDeadTr(time.After(TrLifeTime), id)
 		return Transactions[id]
 	}
 }

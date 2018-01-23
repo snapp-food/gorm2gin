@@ -83,7 +83,7 @@ var w =new(sync.WaitGroup)
 func TestTick(t *testing.T) {
 
 	w.Add(1)
-	go tt(time.Tick(time.Second*2))
+	go tt(time.After(time.Second*2))
 
 	fmt.Println("salam")
 	w.Wait()
