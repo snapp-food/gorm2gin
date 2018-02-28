@@ -3,8 +3,8 @@ package gorm2gin
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	"strconv"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -47,11 +47,15 @@ func (CRUDer *CRUDer) List(context *gin.Context) {
 		criteria                                  = Criteria{}
 		res                                       = CRUDer.m.NewSlice()
 		qStr                                      = context.Request.URL.Query()
-		limitStr, _                               = context.GetQuery(queryParamLimit)
+		limitStr, wantLimit                       = context.GetQuery(queryParamLimit)
 		offsetStr, _                              = context.GetQuery(queryParamOffset)
 		pageOrderField, _                         = context.GetQuery(queryParamPageOrderField)
 		pageOrderDirection, hasPageOrderDirection = context.GetQuery(queryParamPageOrderDirection)
 	)
+
+	if !wantLimit {
+		limitStr = "100"
+	}
 
 	for key, value := range qStr {
 		if key[0] == '_' {
@@ -102,7 +106,11 @@ func (CRUDer *CRUDer) List(context *gin.Context) {
 
 func (CRUDer *CRUDer) Create(context *gin.Context) {
 	var res = CRUDer.m.NewOne()
-	context.ShouldBindJSON(res)
+	err :=context.ShouldBindJSON(res)
+	if err != nil {
+		context.String(400, err.Error())
+		panic(err)
+	}
 	var rId = reflect.Indirect(reflect.ValueOf(res)).FieldByName("ID")
 	rId.Set(reflect.Zero(rId.Type()))
 	if err := CRUDer.GetDB(context).Create(res).Error; err != nil {
@@ -131,7 +139,11 @@ func (CRUDer *CRUDer) Update(context *gin.Context) {
 		intId, _ = strconv.Atoi(id)
 	)
 	var query = CRUDer.GetDB(context).Find(res, id)
-	context.ShouldBindJSON(res)
+	err :=context.ShouldBindJSON(res)
+	if err != nil {
+		context.String(400, err.Error())
+		panic(err)
+	}
 	var i = int64(intId)
 	reflect.Indirect(reflect.ValueOf(res)).FieldByName("ID").Set(reflect.ValueOf(&i))
 	if err := query.Update(res).Error; err != nil {

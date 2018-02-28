@@ -1,11 +1,11 @@
 package gorm2gin
 
 import (
-	"github.com/jinzhu/gorm"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"strconv"
 	"time"
-	"fmt"
 )
 
 const TrLifeTime = time.Second * 2

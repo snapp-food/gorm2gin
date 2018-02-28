@@ -1,8 +1,8 @@
 package gorm2gin
 
 import (
-	"github.com/jinzhu/gorm"
 	"fmt"
+	"github.com/jinzhu/gorm"
 	"strings"
 )
 
@@ -50,7 +50,7 @@ func (Criteria Criteria) Query() (string, []interface{}) {
 		queries = append(queries, query)
 		values = append(values, value)
 	}
-	return strings.Join(queries," AND ") , values
+	return strings.Join(queries, " AND "), values
 }
 
 type WhereOperator string
@@ -63,6 +63,6 @@ const (
 	WhereOpLTEqual  WhereOperator = "<="
 	WhereOpNotEqual WhereOperator = "!="
 	//WhereIn         WhereOperator = "in"
-	WhereOpLike     WhereOperator = "like"
+	WhereOpLike WhereOperator = "like"
 	//WhereOpBetween  WhereOperator = "between"
 )
