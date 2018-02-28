@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"github.com/gin-gonic/gin/binding"
 )
 
 //fixme: handle connection is closed errors
@@ -106,7 +107,8 @@ func (CRUDer *CRUDer) List(context *gin.Context) {
 
 func (CRUDer *CRUDer) Create(context *gin.Context) {
 	var res = CRUDer.m.NewOne()
-	err :=context.ShouldBindJSON(res)
+	//err :=context.ShouldBindJSON(res)
+	err :=context.ShouldBindWith(res,binding.JSON)
 	if err != nil {
 		context.String(400, err.Error())
 		panic(err)
@@ -139,7 +141,8 @@ func (CRUDer *CRUDer) Update(context *gin.Context) {
 		intId, _ = strconv.Atoi(id)
 	)
 	var query = CRUDer.GetDB(context).Find(res, id)
-	err :=context.ShouldBindJSON(res)
+	//err :=context.ShouldBindJSON(res)
+	err :=context.ShouldBindWith(res,binding.JSON)
 	if err != nil {
 		context.String(400, err.Error())
 		panic(err)
