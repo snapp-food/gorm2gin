@@ -13,15 +13,6 @@ import (
 
 //todo:: sync and async mod! (bekhosus tu tr mod)
 
-//todo: transactional requests: ye flag e transactionMode migire ba ye UniqueID (rand) ke baraye majmueye trans estefade mikone
-// va akhare kar Commit ya Rollback call mishe!
-// mitune Sync va ASync bashe juri ke poshte har request query bezane ya ASync query bezane va faghat tu commit result ro bege!
-// sare Commit mibine age hameye query ha anjam shode ke result o mide magarna sabr mikone hamashun anjam beshan bad result mide!
-// todo INJURIIIIIIIIIIII: ye service e singleton darim ke handler e transactionas:
-// vaghti ye tr e jadid miad ba hamin uid:::  tx := DB.Begin() ro zakhire mikone!! va bad ru un query mizane dige!
-// akharesham ru hamun tx.commit ya tx.rollback HOOOOOOOOOOOOOORAAAAy
-// har kodumam ye expire e moshakhas dare ke age vaziatesh moshakhas nashod khodesh rollback ya commit kone! ya bebinam mysql che mikone!
-
 func InitCRUDer(db *gorm.DB, model CRUDerModelInterface) *CRUDer {
 	var cruder = new(CRUDer)
 	cruder.m = model
@@ -109,6 +100,7 @@ func (CRUDer *CRUDer) Create(context *gin.Context) {
 	var res = CRUDer.m.NewOne()
 	//err :=context.ShouldBindJSON(res)
 	err :=context.ShouldBindWith(res,binding.JSON)
+
 	if err != nil {
 		context.String(400, err.Error())
 		panic(err)
